@@ -3,6 +3,7 @@ let app = null;
 function main(){
     let canvas = document.getElementById("canvas");
     app = new Chess();
+    // app.highlightMovablePieces();
     // app.drawGame(canvas);
     // app.clickCanvas();
     // app.calcPositionBoard("A1");

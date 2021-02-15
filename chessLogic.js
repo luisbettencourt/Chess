@@ -40,12 +40,16 @@ class Chess {
     ];
     this.pieceImages = this.initializePieces();
     this.canvas = document.getElementById("canvas");
+
     
     this.rows = ["1", "2", "3", "4", "5", "6", "7", "8"].reverse();
     this.columns = ["A", "B", "C", "D", "E", "F", "G", "H"];
     this.squareHeight = this.canvas.width / this.rows.length;
     this.squareWidth = this.canvas.height / this.columns.length;
     this.selectedPiece;
+    this.movablePieces = [];
+    this.lastMove = {};
+
     this.loading = false;
     this.newGame();
   }
@@ -121,6 +125,7 @@ class Chess {
     };
 
     this.moves = this.calcPieceMoves(this.pieces, this.turn);
+    this.movablePieces = this.highlightMovablePieces("white");
     this.drawGame();
     this.clickCanvas();
   }
@@ -285,7 +290,10 @@ class Chess {
         ctx.fillRect(pos.posX, pos.posY, pos.squareWidth, pos.squareHeight);
         ctx.fillStyle = isWhite ? "#EBECD0" : "#779556";
         ctx.fillText(position, pos.posX + 5, pos.posY + pos.squareHeight - 5);
-        ctx.stroke();
+        if(position === this.lastMove.sourcePosition || position === this.lastMove.targetPosition){
+          ctx.fillStyle = "rgba(255, 255, 0, 0.5)";
+          ctx.fillRect(pos.posX, pos.posY, pos.squareWidth, pos.squareHeight);
+        }
       }
     }
   }
@@ -298,11 +306,21 @@ class Chess {
       const chessPiece = this.pieceImages[piece];
       const pos = this.calcPositionBoard(keysBoard[i]);
       if(chessPiece.complete){
+        if(this.movablePieces.includes(keysBoard[i])){
+          ctx.shadowColor = 'blue';
+          ctx.shadowBlur = 3;
+        }
         ctx.drawImage(chessPiece, pos.posX, pos.posY, pos.squareWidth, pos.squareHeight);
+        ctx.shadowBlur = 0;
       }
       else{
         chessPiece.addEventListener("load", () => {
+          if(this.movablePieces.includes(keysBoard[i])){
+            ctx.shadowColor = '#0000a8';
+            ctx.shadowBlur = 3;
+          }
           ctx.drawImage(chessPiece, pos.posX, pos.posY, pos.squareWidth, pos.squareHeight);
+          ctx.shadowBlur = 0;
         }, false);
       }
     }
@@ -313,11 +331,14 @@ class Chess {
   }
 
   movePiece(sourcePosition, targetPosition, turn){
+    this.pawnToQueen(sourcePosition, targetPosition, turn);
+    this.lastMove = {sourcePosition, targetPosition}
     let piece = this.pieces[sourcePosition];
     this.pieces[targetPosition] = piece;
     delete this.pieces[sourcePosition];
-    this.drawGame(canvas);
     this.moves = this.calcPieceMoves(this.pieces, turn);
+    this.movablePieces = this.highlightMovablePieces("white");
+    this.drawGame(canvas);
   }
 
   takeTurn(sourcePosition, targetPosition){
@@ -332,7 +353,7 @@ class Chess {
       this.fullMove++;
       this.halfMove++;
       setTimeout(() =>{
-      const aiMove = jsChess.aiMove(this.objectGameState(), 2);
+      const aiMove = jsChess.aiMove(this.objectGameState(), 1);
       this.takeTurn(Object.keys(aiMove)[0], Object.values(aiMove)[0]);
 
       },500)
@@ -370,6 +391,28 @@ class Chess {
     }
     });
   } 
+
+
+  highlightMovablePieces(turn = "white"){
+    const lengthObject = Object.keys(this.pieces);
+    let playerMoves = {};
+    let arrayPositions = [];
+    for(let i = 0; i < lengthObject.length;i++){
+      const valueBoard = this.pieces[lengthObject[i]]
+      if(this.checkPieceOwner(valueBoard) === turn){
+        playerMoves[lengthObject[i]] = this.moves[lengthObject[i]];
+      }
+    }  
+    for(let i = 0; i < Object.keys(playerMoves).length;i++){
+      const position = Object.keys(playerMoves)[i];
+      const arrayMoves = playerMoves[position];
+      if(arrayMoves.length !== 0){
+        arrayPositions.push(position);
+      }
+   }
+   return arrayPositions;
+  }
+
   
   drawPossiblePath(){
     let ctx = canvas.getContext("2d");
@@ -382,8 +425,32 @@ class Chess {
         const cords = this.getPieceCoords(moves[i]);
         const posX = this.squareWidth*cords.xCoord + this.squareWidth/2;
         const posY =  this.squareHeight*cords.yCoord + this.squareHeight/2;
-        ctx.arc(posX, posY, 10, 0, 2 * Math.PI);
-        ctx.stroke();
+        console.log(this.checkPieceOwner(moves[i]))
+        if(this.pieces[moves[i]] && this.checkPieceOwner(this.pieces[moves[i]]) !== this.turn){
+          ctx.arc(posX, posY, this.squareWidth/2, 0, 2 * Math.PI);
+          ctx.strokeStyle = "rgba(0,0,0,.3)"
+          ctx.lineWidth = 5;
+          ctx.stroke();
+        }
+        else{
+          ctx.fillStyle = "rgba(0,0,0,.2)";
+          ctx.arc(posX, posY, 15, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      }
+    }
+  }
+
+
+  pawnToQueen(sourcePosition, targetPosition){
+    if(this.pieces[sourcePosition] === "p"){
+      if(targetPosition[1] === this.rows[7]){
+        this.pieces[sourcePosition] = "q";
+      }
+    }
+    if(this.pieces[sourcePosition] === "P"){
+      if(targetPosition[1] === this.rows[0]){
+        this.pieces[sourcePosition] = "Q";
       }
     }
   }
@@ -536,96 +603,6 @@ class Chess {
     // console.log(validatedMoves);
     return validatedMoves;
   }
-
-
-  
-
-
-  // kingMoves(position) {
-  //   const cordXPiece = this.getPieceCoords(position).xCoord;
-  //   const cordYPiece = this.getPieceCoords(position).yCoord;
-  //   const playerColor = this.checkPieceOwner(this.Board[position]);
-  //   let possibleMovePos;
-  //   let possibleKillPos;
-  //   let possibleMoveDirection;
-  //   let possibleKillDirection;
-
-  //   if (playerColor === "white") {
-  //     let front = [];
-  //     let frontRight = [];
-  //     let frontLeft = [];
-  //     let right = [];
-  //     let left = [];
-  //     let down = []
-  //     let downRight = [];
-  //     let downLeft = [];
-
-  //     frontRight.push([cordXPiece + 1, cordYPiece - 1]);
-  //     frontLeft.push([cordXPiece - 1, cordYPiece - 1]);
-  //     front.push([cordXPiece, cordYPiece - 1]);
-  //     right.push([cordXPiece + 1, cordYPiece]);
-  //     left.push([cordXPiece - 1, cordYPiece]);
-  //     down.push([cordXPiece, cordYPiece + 1]);
-  //     downLeft.push([cordXPiece + 1, cordYPiece + 1]);
-  //     downRight.push([cordXPiece - 1, cordYPiece + 1]);
-
-  //     possibleMoveDirection = [frontLeft, frontRight, front, right, left, down, downLeft, downRight];
-  //     possibleKillDirection = [frontLeft, frontRight, front, right, left, down, downLeft, downRight];
-  //   }
-  //   else {
-  //     let front = [];
-  //     let frontRight = [];
-  //     let frontLeft = [];
-  //     let right = [];
-  //     let left = [];
-  //     let down = []
-  //     let downRight = [];
-  //     let downLeft = [];
-
-  //     frontRight.push([cordXPiece + 1, cordYPiece - 1]);
-  //     frontLeft.push([cordXPiece - 1, cordYPiece - 1]);
-  //     front.push([cordXPiece, cordYPiece - 1]);
-  //     right.push([cordXPiece + 1, cordYPiece]);
-  //     left.push([cordXPiece - 1, cordYPiece]);
-  //     down.push([cordXPiece, cordYPiece + 1]);
-  //     downLeft.push([cordXPiece + 1, cordYPiece + 1]);
-  //     downRight.push([cordXPiece - 1, cordYPiece + 1]);
-
-  //     possibleMoveDirection = [frontLeft, frontRight, front, right, left, down, downLeft, downRight];
-  //     possibleKillDirection = [frontLeft, frontRight, front, right, left, down, downLeft, downRight];
-  //   }
-  //   const validatedMoves = [];
-
-  //   for (let i = 0; i < 8; i++) {
-  //     possibleMovePos = possibleMoveDirection[i];
-  //     possibleKillPos = possibleKillDirection[i];
-
-  //     possibleMovePos = possibleMovePos.filter((cords) => this.columns[cords[0]] && this.rows[cords[1]]).map((cords) => this.columns[cords[0]] + this.rows[cords[1]]);
-  //     possibleKillPos = possibleKillPos.filter((cords) => this.columns[cords[0]] && this.rows[cords[1]]).map((cords) => this.columns[cords[0]] + this.rows[cords[1]]);
-
-  //     for (let i = 0; i < possibleMovePos.length; i++) {
-  //       if (!Object.keys(this.Board).includes(possibleMovePos[i])) {
-  //         validatedMoves.push(possibleMovePos[i]);
-  //       }
-  //       else {
-  //         //nao vai verificar os quadrados a seguir porque tem uma peça a frente logo nao permite ir mais longe
-  //         break;
-  //       }
-  //     }
-  //     for (let i = 0; i < possibleKillPos.length; i++) {
-  //       if (Object.keys(this.Board).includes(possibleKillPos[i])) {
-  //         if (this.checkPieceOwner(this.Board[possibleKillPos[i]]) !== playerColor) {
-  //           validatedMoves.push(possibleKillPos[i]);
-  //         }
-  //         break;
-  //       }
-  //     }
-  //   }
-  //   console.log(validatedMoves);
-  //   return validatedMoves;
-  // }
-
-
 
 
 
