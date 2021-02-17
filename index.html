@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="styling.css">
+    <script src="https://kit.fontawesome.com/8d9214c896.js" crossorigin="anonymous"></script>
     <script src="./lib/js-chess-engine.js"></script>
     <script src="chessLogic.js"></script>
     <script src="manager.js"></script>
@@ -23,11 +24,43 @@
 </head>
 
 <body>
-    <header>
-        <h1>
-            Xadrez
-        </h1>
-    </header>
+  
+  <div id="login" class="modal" tabindex="-1" role="dialog"  data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header modalpop">
+          <h5 class="modal-title">Login</h5>
+        </div>
+        <div class="modal-body">
+            <div class='form-uname'>
+                <label id='nameLable' for='nameField'>Create a username:</label>
+                <input id='nameField' type='text' maxlength='25' value="Guest" ></input>
+            </div>
+            <div class='form-sub'>
+            </div>
+          <p id="modalTexto"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="loginModalAction()">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <section id="menuStart">
+      Select Game Mode
+      <div class="divGameModes">
+          <button class="gameMode" id="online">
+            <img class="gameModeImg" src = "images/checkmate.svg">
+            vs Online
+          </button>
+
+          <button class="gameMode" id="offline" onclick="playComputer()">
+            <img class="gameModeImg" src="images/pc.svg">
+            vs Computer
+          </button>
+      </div>
+    </section>
 
     <div id="popup" class="modal" tabindex="-1" role="dialog"  data-backdrop="static">
       <div class="modal-dialog" role="document">
@@ -48,11 +81,66 @@
       </div>
     </div>
 
-    <section>
+    <section id="gameSection">
+      <div id="canvasDiv">
         <canvas id="canvas" width="800" height="800">
-    
         </canvas>
+      </div>
+        <div id="gameMenu">
+          <div id="playerBlack" class="users">
+            <img class="gamePanelImg" src="images/pc.svg">
+            <span id="playerBlackName">
+            </span>
+          </div>
 
+          <div class="buttonsMenu">
+            <button id="restartGame" onclick="app.newGame()">
+              <i class="fas fa-redo"></i>
+              Restart Game
+            </button>
+  
+            <button  id="goMenu" onclick="goToMenu()">
+              <i class="fas fa-list"></i>
+              Go back to Menu
+            </button>
+          </div>
+
+          <div id="playerWhite" class="users">
+            <img class="gamePanelImg" src="images/man.svg">
+            <span id="playerWhiteName">
+            </span>
+          </div>
+        </div>
+    </section>
+
+    <section id="chooseDifficulty">
+      <div class="pickDif">
+        <div class="text">
+          Select Difficulty
+        </div>
+        <button class="buttonDif" id="easy" onclick="changeDifficulty(0)">
+            <i class="fas fa-star" style="font-size: 14px; color: rgba(255,255,255,0.8); margin-right: 10px;"></i>
+            Easy
+        </button>
+        <button class="buttonDif" id="medium" onclick="changeDifficulty(1)">
+            <i class="fas fa-star" style="font-size: 18px; color: rgba(255,255,255,0.8); margin-right: 10px;"></i>
+            Medium
+        </button>
+        <button class="buttonDif" id="hard" onclick="changeDifficulty(2)">
+            <i class="fas fa-star" style="font-size: 22px; color: rgba(255,255,255,0.8); margin-right: 10px;"></i>
+            Hard
+        </button>
+        <button class="buttonDif" id="expert" onclick="changeDifficulty(3)">
+            <i class="fas fa-star" style="font-size: 26px; color: rgba(255,255,255,0.8); margin-right: 10px;"></i>
+            Expert
+        </button>
+        <div class="divPlay">
+          <button id="play" onclick="startGame()">
+            <i class="fas fa-play" class="buttonDisabled" style="font-size: 26px; color: inherit; margin-right: 10px;"></i></i>
+            Play
+          </button>
+        </div>
+      </div>
     </section>
 
     <script>

@@ -1,7 +1,7 @@
 const jsChess = window['js-chess-engine'];
 
 class Chess {
-  constructor() {
+  constructor(name, opponentName, difficulty = 1) {
     this.computerPieces = [
       "k",
       "q",
@@ -40,18 +40,24 @@ class Chess {
     ];
     this.pieceImages = this.initializePieces();
     this.canvas = document.getElementById("canvas");
-
+    
     
     this.rows = ["1", "2", "3", "4", "5", "6", "7", "8"].reverse();
     this.columns = ["A", "B", "C", "D", "E", "F", "G", "H"];
-    this.squareHeight = this.canvas.width / this.rows.length;
-    this.squareWidth = this.canvas.height / this.columns.length;
+    this.squareHeight;
+    this.squareWidth;
     this.selectedPiece;
     this.movablePieces = [];
-    this.lastMove = {};
-
-    this.loading = false;
+    this.name = name;
+    this.opponentName = opponentName;
+    this.difficulty = difficulty;
+    
     this.newGame();
+    setTimeout(() => {
+      this.canvasResize();
+    }, 500)
+    window.addEventListener('resize', () => this.canvasResize());
+  
   }
   
   objectGameState(){
@@ -68,15 +74,18 @@ class Chess {
       isFinished : this.isFinished
     }
   }
-
+  
   newGame(){
     this.turn = "white";
     this.check = false;
     this.checkMate = false;
+    this.draw = false;
+    this.loading = false;
     this.isFinished = false;
     this.enPassant = null;
     this.halfMove = 0;
     this.fullMove = 0;
+    this.lastMove = {};
 
     this.castling = {
       whiteLong: false,
@@ -84,6 +93,7 @@ class Chess {
       blackLong: false,
       blackShort: false,
     };
+
     this.pieces = {
       A8: this.computerPieces[6],
       A7: this.computerPieces[8],
@@ -123,12 +133,27 @@ class Chess {
       // D5: this.computerPieces[15],
       // E4: this.computerPieces[2]
     };
-
     this.moves = this.calcPieceMoves(this.pieces, this.turn);
     this.movablePieces = this.highlightMovablePieces("white");
-    this.drawGame();
+  
+    setTimeout(() =>{
+      this.drawGame();
+    }, 500)
+
     this.clickCanvas();
   }
+
+
+  canvasResize(){
+    const parentSize = this.canvas.parentNode.getBoundingClientRect();
+    const parentWidth = parentSize.width;
+    const parentHeight = parentSize.height;
+    let canvasSize = Math.min(parentWidth, parentHeight);
+    this.canvas.width = canvasSize;
+    this.canvas.height = canvasSize; 
+    this.drawGame();
+  }
+
 
   calcPieceMoves(board, turn, validateCheck = true) {
     let moves = {};
@@ -141,6 +166,7 @@ class Chess {
       const kingCheck = this.kingCheckMate(board, moves, turn);
       this.check = kingCheck.check;
       this.checkMate = kingCheck.checkMate;
+      this.draw = kingCheck.draw;
     }
     return moves;
   }
@@ -196,6 +222,7 @@ class Chess {
     let kingPos;
     let check = false;
     let checkMate = false;
+    let draw = false;
     if(turn === "white"){
       kingPos = Object.keys(pieces).find((pos) => "K" === (pieces)[pos])
     }
@@ -212,9 +239,12 @@ class Chess {
       }
     }
     else{
+      if(!this.getPlayerMoves(turn, pieces, moves).length){
+        draw = true;
+      }
       check = false;
     }
-    return {check, checkMate}
+    return {check, checkMate, draw}
   }
 
 
@@ -251,15 +281,16 @@ class Chess {
 
   calcPositionBoard(position) {
     const coords = this.getPieceCoords(position);
+    const canvasSize = this.canvas.getBoundingClientRect();
     const canvasWidth = this.canvas.width;
     const canvasHeight = this.canvas.height;
-    const squareHeight = canvasWidth / this.rows.length;
-    const squareWidth = canvasHeight / this.columns.length;
+    this.squareWidth = canvasWidth / this.rows.length;
+    this.squareHeight = canvasHeight / this.columns.length;
     return {
-      posX: coords.xCoord * squareHeight,
-      posY: coords.yCoord * squareWidth,
-      squareWidth,
-      squareHeight,
+      posX: coords.xCoord * this.squareWidth,
+      posY: coords.yCoord * this.squareHeight,
+      squareWidth: this.squareWidth,
+      squareHeight: this.squareHeight,
     };
   }
 
@@ -270,16 +301,23 @@ class Chess {
       if(this.turn === "white"){
         showModal("You lost")
       }
+
       else{
         showModal("You won")
       }
+    }
+    else if(this.draw){
+      showModal("Draw");
     }
   }
 
 
   drawBoard(canvas) {
     let ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const canvasSize = this.canvas.getBoundingClientRect();
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     for (let i = 0; i < this.rows.length; i++) {
       for (let j = 0; j < this.columns.length; j++) {
         const isWhite = (i % 2 === 0 && j % 2 === 1) || (i % 2 === 1 && j % 2 === 0);
@@ -353,8 +391,14 @@ class Chess {
       this.fullMove++;
       this.halfMove++;
       setTimeout(() =>{
-      const aiMove = jsChess.aiMove(this.objectGameState(), 1);
-      this.takeTurn(Object.keys(aiMove)[0], Object.values(aiMove)[0]);
+        try {
+          const aiMove = jsChess.aiMove(this.objectGameState(), this.difficulty);
+          this.takeTurn(Object.keys(aiMove)[0], Object.values(aiMove)[0]);
+          
+        } catch (error) {
+          this.draw = true;
+          this.drawGame(this.canvas);
+        }
 
       },500)
     }
@@ -382,7 +426,6 @@ class Chess {
           this.takeTurn(this.selectedPiece, position);
           this.selectedPiece = undefined;
         }
-      
       
       else if(Object.keys(this.pieces).includes(position) && this.checkPieceOwner(this.pieces[position]) === "white"){
         this.selectedPiece = position;
@@ -425,7 +468,6 @@ class Chess {
         const cords = this.getPieceCoords(moves[i]);
         const posX = this.squareWidth*cords.xCoord + this.squareWidth/2;
         const posY =  this.squareHeight*cords.yCoord + this.squareHeight/2;
-        console.log(this.checkPieceOwner(moves[i]))
         if(this.pieces[moves[i]] && this.checkPieceOwner(this.pieces[moves[i]]) !== this.turn){
           ctx.arc(posX, posY, this.squareWidth/2, 0, 2 * Math.PI);
           ctx.strokeStyle = "rgba(0,0,0,.3)"
@@ -603,8 +645,6 @@ class Chess {
     // console.log(validatedMoves);
     return validatedMoves;
   }
-
-
 
 }
 
