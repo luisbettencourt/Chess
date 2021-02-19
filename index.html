@@ -41,7 +41,6 @@
             </div>
             <div class='form-sub'>
             </div>
-          <p id="modalTexto"></p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" onclick="loginModalAction()">Next</button>
@@ -84,6 +83,45 @@
       </div>
     </div>
 
+    <div id="waitForOpponent" class="modal" tabindex="-1" role="dialog"  data-backdrop="static">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header modalpop">
+            <h5 class="modal-title">Chess</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p id="modalTexto">Waiting for opponent to connect</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" onclick="goToMenu()">Go Back To Menu</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="requestNewGame" class="modal" tabindex="-1" role="dialog"  data-backdrop="static">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header modalpop">
+            <h5 class="modal-title">Chess</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p id="modalTexto">Waiting for opponent to respond</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" onclick="goToMenu()">Go Back To Menu</button>
+            <button type="button" class="btn btn-primary" onclick="hideRequestModal()">Ok</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <section id="gameSection">
       <div id="canvasDiv">
         <canvas id="canvas" width="800" height="800">
@@ -97,7 +135,7 @@
           </div>
 
           <div class="buttonsMenu">
-            <button id="restartGame" onclick="app.newGame()">
+            <button id="restartGame" onclick="game.requestNewGame()">
               <i class="fas fa-redo"></i>
               Restart Game
             </button>

@@ -1,7 +1,7 @@
 const jsChess = require("js-chess-engine");
 
 exports.Chess = class Chess {
-  constructor(name, opponentName, online = false, difficulty = 1) {
+  constructor(name, opponentName, room, online = false, difficulty = 1) {
     this.computerPieces = [
       "k",
       "q",
@@ -47,106 +47,113 @@ exports.Chess = class Chess {
     this.movablePieces = [];
     this.name = name;
     this.opponentName = opponentName;
+    this.room = room;
     this.difficulty = difficulty;
-    this.online = online;     
+    this.online = online;
 
     this.newGame();
   }
 
   clientGameState() {
     return {
-        draw: this.draw,
-        loading: this.loading,
-        movablePieces: this.movablePieces,
-        lastMove: this.lastMove,
-        pieces: this.pieces,
-        turn: this.turn,
-        check: this.check,
-        checkMate: this.checkMate,
-        moves: this.moves,
-        castling: this.castling,
-        enPassant: this.enPassant,
-        halfMove: this.halfMove,
-        fullMove: this.fullMove,
-        isFinished: this.isFinished,
+      newGameRequested: this.newGameRequested,
+      playersReady: this.playersReady,
+      name: this.name,
+      opponentName: this.opponentName,
+      draw: this.draw,
+      loading: this.loading,
+      movablePieces: this.movablePieces,
+      lastMove: this.lastMove,
+      pieces: this.pieces,
+      turn: this.turn,
+      check: this.check,
+      checkMate: this.checkMate,
+      moves: this.moves,
+      castling: this.castling,
+      enPassant: this.enPassant,
+      halfMove: this.halfMove,
+      fullMove: this.fullMove,
+      isFinished: this.isFinished,
     };
   }
 
-   mirrorClientGameState(){
-      let mirroredPieces = {};
-      const keysPieces = Object.keys(this.pieces);
-      for(let i = 0; i < keysPieces.length; i++){
-        const newPosition = this.mirrorPosition(keysPieces[i]);
-        let newPiece;
-        const originalPiece = this.pieces[keysPieces[i]];
-        if(originalPiece === originalPiece.toUpperCase()){
-            newPiece = originalPiece.toLowerCase();
-        }
-        else{
-            newPiece = originalPiece.toUpperCase();
-        }
-        mirroredPieces[newPosition] = newPiece;
-        
+  mirrorClientGameState() {
+    let mirroredPieces = {};
+    const keysPieces = Object.keys(this.pieces);
+    for (let i = 0; i < keysPieces.length; i++) {
+      const newPosition = this.mirrorPosition(keysPieces[i]);
+      let newPiece;
+      const originalPiece = this.pieces[keysPieces[i]];
+      if (originalPiece === originalPiece.toUpperCase()) {
+        newPiece = originalPiece.toLowerCase();
+      } else {
+        newPiece = originalPiece.toUpperCase();
       }
+      mirroredPieces[newPosition] = newPiece;
+    }
 
-      let mirroredMoves = {};
-      const keysMoves = Object.keys(this.moves);
-      for(let i = 0; i < keysMoves.length; i++){
-       const newPositionMoves = this.mirrorPosition(keysMoves[i]);
-       const originalMoves = this.moves[keysMoves[i]];
-       const newMoves = originalMoves.map((move) => this.mirrorPosition(move));
-       mirroredMoves[newPositionMoves] = newMoves;
-      }
+    let mirroredMoves = {};
+    const keysMoves = Object.keys(this.moves);
+    for (let i = 0; i < keysMoves.length; i++) {
+      const newPositionMoves = this.mirrorPosition(keysMoves[i]);
+      const originalMoves = this.moves[keysMoves[i]];
+      const newMoves = originalMoves.map((move) => this.mirrorPosition(move));
+      mirroredMoves[newPositionMoves] = newMoves;
+    }
 
-      let mirrorLastMove = this.mirrorMove(this.lastMove);
-    
-        const mirrorMovable = this.movablePieces.map((movablePos) => this.mirrorPosition(movablePos));
-      
-        let mirrorTurn = "";
-        if(this.turn === "white"){
-            mirrorTurn = "black";
-        }
-        else{
-            mirrorTurn = "white";
-        }
-        console.log(this.movablePieces);
-        console.log(mirrorMovable)
-        return{
-            draw: this.draw,
-            loading: this.loading,
-            movablePieces: mirrorMovable,
-            lastMove: mirrorLastMove,
-            pieces: mirroredPieces,
-            turn: mirrorTurn,
-            check: this.check,
-            checkMate: this.checkMate,
-            moves: mirroredMoves,
-            castling: this.castling,
-            enPassant: this.enPassant,
-            halfMove: this.halfMove,
-            fullMove: this.fullMove,
-            isFinished: this.isFinished,
-        }
+    let mirrorLastMove = this.mirrorMove(this.lastMove);
+
+    const mirrorMovable = this.movablePieces.map((movablePos) =>
+      this.mirrorPosition(movablePos)
+    );
+
+    let mirrorTurn = "";
+    if (this.turn === "white") {
+      mirrorTurn = "black";
+    } else {
+      mirrorTurn = "white";
+    }
+    return {
+      newGameRequested: this.newGameRequested === "white" ? "black" : "white",
+      playersReady: this.playersReady,
+      name: this.opponentName,
+      opponentName: this.name,
+      draw: this.draw,
+      loading: this.loading,
+      movablePieces: mirrorMovable,
+      lastMove: mirrorLastMove,
+      pieces: mirroredPieces,
+      turn: mirrorTurn,
+      check: this.check,
+      checkMate: this.checkMate,
+      moves: mirroredMoves,
+      castling: this.castling,
+      enPassant: this.enPassant,
+      halfMove: this.halfMove,
+      fullMove: this.fullMove,
+      isFinished: this.isFinished,
+    };
   }
 
-  mirrorPosition(originalPos){
-    const originalRowIndex = this.rows.findIndex((row) => row === originalPos[1]);
-    const newPos = this.rows.reverse()[originalRowIndex]
+  mirrorPosition(originalPos) {
+    const originalRowIndex = this.rows.findIndex(
+      (row) => row === originalPos[1]
+    );
+    const newPos = this.rows.reverse()[originalRowIndex];
     const newPosition = originalPos[0] + newPos;
     return newPosition;
   }
 
-  mirrorMove(move){
+  mirrorMove(move) {
     let mirroredLastMove = {};
     const keysLastMove = Object.keys(move);
-    for(let i = 0; i < keysLastMove.length; i++){
+    for (let i = 0; i < keysLastMove.length; i++) {
       const originalLastMove = move[keysLastMove[i]];
       const newLastMove = this.mirrorPosition(originalLastMove);
       mirroredLastMove[keysLastMove[i]] = newLastMove;
     }
     return mirroredLastMove;
   }
-
 
   objectGameState() {
     return {
@@ -216,16 +223,10 @@ exports.Chess = class Chess {
       G2: this.playerPieces[14],
       H1: this.playerPieces[7],
       H2: this.playerPieces[15],
-
-      // D4: this.playerPieces[0],
-      //D5: this.computerPieces[15],
-      // E4: this.computerPieces[2]
     };
     this.moves = this.calcPieceMoves(this.pieces, this.turn);
     this.movablePieces = this.highlightMovablePieces(this.turn);
-
   }
-
 
   calcPieceMoves(board, turn, validateCheck = true) {
     let moves = {};
@@ -314,7 +315,6 @@ exports.Chess = class Chess {
     return { check, checkMate, draw };
   }
 
-
   getPieceCoords(position) {
     const xCoord = this.columns.findIndex((column) => column === position[0]);
     const yCoord = this.rows.findIndex((row) => row === position[1]);
@@ -324,7 +324,6 @@ exports.Chess = class Chess {
   getPiecePosition(xCoord, yCoord) {
     return this.columns[xCoord] + this.rows[yCoord];
   }
-
 
   checkPieceOwner(piece) {
     return piece === piece.toUpperCase() ? "white" : "black";
@@ -336,25 +335,25 @@ exports.Chess = class Chess {
     let piece = this.pieces[sourcePosition];
     this.pieces[targetPosition] = piece;
     delete this.pieces[sourcePosition];
-    this.moves = this.calcPieceMoves(this.pieces, turn);
-    this.movablePieces = this.highlightMovablePieces(turn);
+    this.turn = turn === "white" ? "black" : "white";
+    this.moves = this.calcPieceMoves(this.pieces, this.turn);
+    this.movablePieces = this.highlightMovablePieces(this.turn);
+    this.room.sendGameState(
+      this.clientGameState(),
+      this.mirrorClientGameState()
+    );
   }
 
-
-  takeTurnOnline(move, player){
+  takeTurnOnline(move, player) {
     const sourcePosition = move.sourcePosition;
     const targetPosition = move.targetPosition;
-    console.log(player)
-    console.log(this.turn);
-    if(player === this.turn){
-        this.movePiece(sourcePosition, targetPosition, this.turn);
-        this.turn = (this.turn === "white" ? "black" : "white");
-        this.fullMove++;
-        this.halfMove++;
+
+    if (player === this.turn) {
+      this.movePiece(sourcePosition, targetPosition, this.turn);
+      this.fullMove++;
+      this.halfMove++;
     }
-
   }
-
 
   takeTurn(move) {
     const sourcePosition = move.sourcePosition;
@@ -366,7 +365,6 @@ exports.Chess = class Chess {
 
     if (this.turn === "white") {
       this.movePiece(sourcePosition, targetPosition, this.turn);
-      this.turn = "black";
       this.fullMove++;
       this.halfMove++;
       setTimeout(() => {
@@ -375,14 +373,20 @@ exports.Chess = class Chess {
             this.objectGameState(),
             this.difficulty
           );
-          this.takeTurn(Object.keys(aiMove)[0], Object.values(aiMove)[0]);
+          this.takeTurn(
+            {
+              sourcePosition: Object.keys(aiMove)[0],
+              targetPosition: Object.values(aiMove)[0],
+            },
+            this.turn
+          );
         } catch (error) {
           this.draw = true;
           //   this.drawGame(this.canvas);
         }
       }, 500);
     } else {
-      this.turn = "white";
+      this.loading = false;
       this.movePiece(sourcePosition, targetPosition, this.turn);
       this.fullMove++;
       this.halfMove++;
@@ -396,25 +400,25 @@ exports.Chess = class Chess {
     return this.getPiecePosition(xCord, yCord);
   }
 
-    highlightMovablePieces(turn = "white"){
-      const lengthObject = Object.keys(this.pieces);
-      let playerMoves = {};
-      let arrayPositions = [];
-      for(let i = 0; i < lengthObject.length;i++){
-        const valueBoard = this.pieces[lengthObject[i]]
-        if(this.checkPieceOwner(valueBoard) === turn){
-          playerMoves[lengthObject[i]] = this.moves[lengthObject[i]];
-        }
+  highlightMovablePieces(turn = "white") {
+    const lengthObject = Object.keys(this.pieces);
+    let playerMoves = {};
+    let arrayPositions = [];
+    for (let i = 0; i < lengthObject.length; i++) {
+      const valueBoard = this.pieces[lengthObject[i]];
+      if (this.checkPieceOwner(valueBoard) === turn) {
+        playerMoves[lengthObject[i]] = this.moves[lengthObject[i]];
       }
-      for(let i = 0; i < Object.keys(playerMoves).length;i++){
-        const position = Object.keys(playerMoves)[i];
-        const arrayMoves = playerMoves[position];
-        if(arrayMoves.length !== 0){
-          arrayPositions.push(position);
-        }
-     }
-     return arrayPositions;
-    }  
+    }
+    for (let i = 0; i < Object.keys(playerMoves).length; i++) {
+      const position = Object.keys(playerMoves)[i];
+      const arrayMoves = playerMoves[position];
+      if (arrayMoves.length !== 0) {
+        arrayPositions.push(position);
+      }
+    }
+    return arrayPositions;
+  }
 
   pawnToQueen(sourcePosition, targetPosition) {
     if (this.pieces[sourcePosition] === "p") {
@@ -632,7 +636,6 @@ exports.Chess = class Chess {
         }
       }
     }
-    // console.log(validatedMoves);
     return validatedMoves;
   }
 };
