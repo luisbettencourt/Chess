@@ -57,14 +57,23 @@ class MyRoom extends colyseus.Room {
         this.app.mirrorClientGameState()
       );
     });
-  }
 
-  // Authorize client based on provided options before WebSocket handshake is complete
-  // onAuth (client, options, request) { }
+    this.onMessage("answerNewGame", (client, answer) => {
+      if (answer) {
+        this.app.newGame();
+      }
+
+      this.app.newGameRequested = undefined;
+
+      this.sendGameState(
+        this.app.clientGameState(),
+        this.app.mirrorClientGameState()
+      );
+    });
+  }
 
   // When client successfully join the room
   onJoin(client, options, auth) {
-    this.broadcast("move", "i joined");
     if (!this.state.white) {
       this.app.name = options.name;
       this.setState({ ...this.state, white: client });
@@ -76,7 +85,6 @@ class MyRoom extends colyseus.Room {
     }
 
     if ((this.online && this.clients.length === 2) || !this.online) {
-      console.log("lock");
       this.lock();
       this.app.playersReady = true;
       this.sendGameState(

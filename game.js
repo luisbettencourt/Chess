@@ -1,11 +1,37 @@
 class Game {
-  constructor(room) {
-    this.room = room;
+  constructor(online, name, difficulty = 1) {
+    this.online = online;
+    this.name = name;
+    this.difficulty = difficulty;
     this.board = new Board(this);
   }
 
+  async joinGame() {
+    try {
+      if (this.online) {
+        this.room = await client.joinOrCreate("room", {
+          maxClients: 2,
+          online: true,
+          name: this.name,
+        });
+      } else {
+        this.room = await client.create("room", {
+          maxClients: 1,
+          online: false,
+          difficulty: difficulty,
+          name: this.name,
+        });
+      }
+
+      this.room.onMessage("gameState", (gameState) => {
+        game.updateGameState(gameState);
+      });
+    } catch (e) {
+      console.error("join error", e);
+    }
+  }
+
   updateGameState(gameState) {
-    console.log(gameState);
     this.newGameRequested = gameState.newGameRequested;
     this.playersReady = gameState.playersReady;
     this.name = gameState.name;

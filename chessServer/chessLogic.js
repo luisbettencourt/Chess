@@ -113,8 +113,14 @@ exports.Chess = class Chess {
     } else {
       mirrorTurn = "white";
     }
+
+    let mirrorNewGamerequested;
+    if (this.newGameRequested) {
+      mirrorNewGamerequested =
+        this.newGameRequested === "white" ? "black" : "white";
+    }
     return {
-      newGameRequested: this.newGameRequested === "white" ? "black" : "white",
+      newGameRequested: mirrorNewGamerequested,
       playersReady: this.playersReady,
       name: this.opponentName,
       opponentName: this.name,

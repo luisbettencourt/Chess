@@ -117,7 +117,9 @@ class Board {
     }
 
     if (this.gameState.newGameRequested) {
-      showRequestModal();
+      showRequestModal(this.gameState.newGameRequested === "black");
+    } else {
+      closeRequestModal();
     }
 
     if (this.gameState.checkMate) {

@@ -9,80 +9,17 @@ function main() {
   showLoginModal();
 }
 
-async function joinOnlineGame() {
-  try {
-    room = await client.joinOrCreate("room", {
-      maxClients: 2,
-      online: true,
-      name: nameLogin,
-    });
-
-    game = new Game(room);
-    
-    room.onMessage("gameState", (gameState) => {
-      console.log(gameState);
-      game.updateGameState(gameState);
-    });
-    
-    room.onMessage("gameState", (gameState) => {
-      console.log(gameState);
-      game.updateGameState(gameState);
-    });
-
-    console.log("joined successfully", room);
-  } catch (e) {
-    console.error("join error", e);
-  }
-}
-
-async function joinOfflineGame() {
-  try {
-    room = await client.joinOrCreate("room", {
-      maxClients: 1,
-      online: false,
-      difficulty: difficulty,
-      name: nameLogin,
-    });
-
-    game = new Game(room);
-
-    room.onStateChange.once((state) => {
-      console.log("this is the first room state!", state);
-    });
-
-    room.onStateChange((state) => {
-      console.log("the room state has been updated:", state);
-    });
-
-    room.onMessage("gameState", (gameState) => {
-      console.log(gameState);
-      game.updateGameState(gameState);
-    });
-
-    console.log("joined successfully", room);
-  } catch (e) {
-    console.error("join error", e);
-  }
-}
-
 function joinRoomOnline() {
-  joinOnlineGame();
-  const dif = document.getElementById("chooseDifficulty");
-  const menu = document.getElementById("menuStart");
-  const game = document.getElementById("gameSection");
+  const difSection = document.getElementById("chooseDifficulty");
+  const menuSection = document.getElementById("menuStart");
+  const gameSection = document.getElementById("gameSection");
 
-  // namePlayer.innerHTML = nameLogin;
-  // nameOpponent.innerHTML = "Computer Level: " + difficulty;
+  difSection.style.display = "none";
+  menuSection.style.display = "none";
+  gameSection.style.display = "grid";
 
-  dif.style.display = "none";
-  menu.style.display = "none";
-  game.style.display = "grid";
-}
-
-function serverOpen() {
-  if (room) {
-    room.send("move", "hey");
-  }
+  game = new Game(true, nameLogin);
+  game.joinGame();
 }
 
 function drawCanvasRect() {
@@ -118,11 +55,16 @@ function closeWaitingModal() {
   jQuery("#waitForOpponent").modal("hide");
 }
 
-function showRequestModal() {
-  jQuery("#requestNewGame").modal("show");
+function showRequestModal(needsAnswer) {
+  if (needsAnswer) {
+    jQuery("#requestNewGameAnswer").modal("show");
+  } else {
+    jQuery("#requestNewGame").modal("show");
+  }
 }
 function closeRequestModal() {
   jQuery("#requestNewGame").modal("hide");
+  jQuery("#requestNewGameAnswer").modal("hide");
 }
 
 function loginModalAction() {
@@ -149,20 +91,16 @@ function changeDifficulty(difValue) {
 }
 
 function startGame() {
-  //   app = new Chess(nameLogin, "Computer Level: " + difficulty, difficulty);
-  joinOfflineGame();
-  const dif = document.getElementById("chooseDifficulty");
-  const menu = document.getElementById("menuStart");
-  const game = document.getElementById("gameSection");
-  //   let nameOpponent = document.getElementById("playerBlackName");
-  //   let namePlayer = document.getElementById("playerWhiteName");
+  game = new Game(false, nameLogin, difficulty);
+  game.joinGame();
 
-  //   namePlayer.innerHTML = nameLogin;
-  //   nameOpponent.innerHTML = "Computer Level: " + difficulty;
+  const difSection = document.getElementById("chooseDifficulty");
+  const menuSection = document.getElementById("menuStart");
+  const gameSection = document.getElementById("gameSection");
 
-  dif.style.display = "none";
-  menu.style.display = "none";
-  game.style.display = "grid";
+  difSection.style.display = "none";
+  menuSection.style.display = "none";
+  gameSection.style.display = "grid";
 }
 
 function playComputer() {
@@ -182,4 +120,5 @@ function goToMenu() {
   menu.style.display = "flex";
   game.style.display = "none";
   closeWaitingModal();
+  closeRequestModal();
 }
