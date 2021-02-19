@@ -57,7 +57,7 @@ class Chess {
       this.canvasResize();
     }, 500)
     window.addEventListener('resize', () => this.canvasResize());
-  
+    
   }
   
   objectGameState(){
@@ -297,6 +297,7 @@ class Chess {
   drawGame(){
     this.drawBoard(canvas);
     this.piecesOnBoard(canvas);
+    console.log(this.checkMate)
     if(this.checkMate){
       if(this.turn === "white"){
         showModal("You lost")
@@ -380,6 +381,7 @@ class Chess {
   }
 
   takeTurn(sourcePosition, targetPosition){
+    console.log([sourcePosition, targetPosition])
     this.loading = true;
     if(Object.keys(this.pieces).includes(targetPosition)){
       this.halfMove = - 1;
@@ -419,7 +421,7 @@ class Chess {
   }
 
   clickCanvas(){
-    this.canvas.addEventListener("click", (e) => {
+    this.canvas.onclick = (e) => {
       const position = this.clickSquare(e.offsetX, e.offsetY);
       if(!this.loading){
         if(this.selectedPiece && this.moves[this.selectedPiece].includes(position)){
@@ -432,7 +434,7 @@ class Chess {
         this.drawPossiblePath();
       }
     }
-    });
+    };
   } 
 
 
@@ -498,13 +500,12 @@ class Chess {
   }
 
 
-  piecesPossibleMoves(position, board, moves) {
+  piecesPossibleMoves(position, board) {
     const cordXPiece = this.getPieceCoords(position).xCoord;
     const cordYPiece = this.getPieceCoords(position).yCoord;
     const playerColor = this.checkPieceOwner(board[position]);
     let possibleKillDirection;
     let possibleMoveDirection;
-    let checkYesNo = false;
     let left = [];
     let right = [];
     let down = [];
@@ -595,7 +596,6 @@ class Chess {
 
       case "k":
       case "K":
-        checkYesNo = true;   
         frontRight.push([cordXPiece + 1, cordYPiece - 1]);
         frontLeft.push([cordXPiece - 1, cordYPiece - 1]);
         front.push([cordXPiece, cordYPiece - 1]);

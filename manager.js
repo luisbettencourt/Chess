@@ -1,11 +1,14 @@
+let game = null;
 let app = null;
 let difficulty = 0;
 let nameLogin = "";
+let client = new Colyseus.Client("ws://localhost:3000");
+let room;
 
 function main(){
+    showLoginModal();
     // let canvas = document.getElementById("canvas");
     // app = new Chess("", "", difficulty);
-    showLoginModal();
     // app.highlightMovablePieces();
     // app.drawGame(canvas);
     // app.clickCanvas();
@@ -16,6 +19,60 @@ function main(){
     // app.squareCheck("C1", "white");
     
 }
+
+
+async function join() {
+    try {
+      room = await client.joinOrCreate("room", {
+        maxClients: 2
+      });
+
+      game = new Game(room);
+
+      room.onStateChange.once((state) => {
+        console.log("this is the first room state!", state);
+      });
+  
+      room.onStateChange((state) => {
+        console.log("the room state has been updated:", state);
+      });
+  
+      room.onMessage("gameState", (gameState) => {
+        console.log(gameState)
+        game.updateGameState(gameState);    
+        // console.log("message received from server");
+        // console.log(message);
+      });
+
+      console.log("joined successfully", room);
+    } catch (e) {
+      console.error("join error", e);
+    }
+  
+  }
+
+function joinRoomOnline(){
+    join();
+    const dif = document.getElementById("chooseDifficulty");
+    const menu = document.getElementById("menuStart");
+    const game = document.getElementById("gameSection");
+
+    // namePlayer.innerHTML = nameLogin;
+    // nameOpponent.innerHTML = "Computer Level: " + difficulty;
+
+    dif.style.display = "none";
+    menu.style.display = "none";
+    game.style.display = "grid";
+}
+
+
+
+function serverOpen(){
+    if(room){
+        room.send("move", "hey");
+    }
+}
+
 
 function drawCanvasRect(){
     let canvas = document.getElementById("canvas");
