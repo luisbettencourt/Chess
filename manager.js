@@ -2,9 +2,11 @@ let game = null;
 let app = null;
 let difficulty = 0;
 let nameLogin = "";
-let client = new Colyseus.Client(proccess.env.serverUrl || "ws://localhost:3000");
+// let client = new Colyseus.Client("ws://chess-server-pcm.herokuapp.com");
+let client = new Colyseus.Client("ws://chess-server-pcm.herokuapp.com");
 let room;
 
+console.log(process?.env)
 function main() {
   showLoginModal();
 }
